@@ -47,7 +47,7 @@ def main(args):
     # plt.savefig("lch_b.png")
     # show(lsh_mask)
 
-    leaf_image_float = leaf_image.astype(np.float) / 255
+    leaf_image_float = leaf_image.astype(np.float64) / 255
     leaf_image_float += 10e-8
     lsh_where = np.where(lsh_mask == 0)
     leaf_image_float[lsh_where[0], lsh_where[1], :] = (1.0, 0.1, 1.0)
@@ -60,24 +60,24 @@ def main(args):
 
     """
     Get pseudo-density of green components per local patches
-    """    
+    """
     patch_size = 7
+    size_pooled = np.array(mask_green_dominant.shape) - [patch_size - 1, patch_size - 1]
     patches = extract_patches_2d(mask_green_dominant, (patch_size, patch_size))
-    size_restored = np.array(mask_green_dominant.shape) - [patch_size - 1, patch_size - 1]
-    mask_green_dominant = (np.max(patches.reshape((-1, patch_size ** 2)), axis=-1)).reshape(size_restored)
-    mask_green_dominant = mask_green_dominant.astype(np.uint8)
+    mask_green_dominant_with_pooling = (np.max(patches.reshape((-1, patch_size ** 2)), axis=-1)).reshape(size_pooled)
+    mask_green_dominant_with_pooling = mask_green_dominant_with_pooling.astype(np.uint8)
 
     green_relative_intensity = np.max(leaf_image_float[:, :, 1][:, :, np.newaxis] / leaf_image_float[:, ..., :], axis=2)
     patches_gri = extract_patches_2d(green_relative_intensity, (patch_size, patch_size)).reshape(-1, patch_size ** 2)
-    mask_gri = np.apply_along_axis(get_density, 1, patches_gri).reshape(mask_green_dominant.shape)
+    mask_gri = np.apply_along_axis(get_density, 1, patches_gri).reshape(size_pooled)
     # gri_quant_l = np.quantile(mask_gri.reshape(-1), 0.50)
     # gri_quant_u = np.quantile(mask_gri.reshape(-1), 0.90)
     gri_quant_l = 1
     gri_quant_u = 30000
     mask_gri[mask_gri < gri_quant_l] = gri_quant_l
     mask_gri[mask_gri >= gri_quant_u] = gri_quant_u
-    mask_gri_shifted = mask_gri - gri_quant_l
-    mask_gri_normalized = (mask_gri_shifted - mask_gri_shifted.min()) / (mask_gri_shifted.max() - mask_gri_shifted.min())
+    mask_gri_normalized = (mask_gri - mask_gri.min()) / (mask_gri.max() - mask_gri.min())
+    mask_gri_normalized[mask_green_dominant_with_pooling == 0] = 0
     mask_gri_normalized = cv2.copyMakeBorder(
         mask_gri_normalized, patch_size // 2, patch_size // 2, patch_size // 2, patch_size // 2, cv2.BORDER_CONSTANT, 0
     )
