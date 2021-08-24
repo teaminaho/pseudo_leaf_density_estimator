@@ -66,6 +66,7 @@ def main(args):
     patches = extract_patches_2d(mask_green_dominant, (patch_size, patch_size))
     mask_green_dominant_with_pooling = (np.max(patches.reshape((-1, patch_size ** 2)), axis=-1)).reshape(size_pooled)
     mask_green_dominant_with_pooling = mask_green_dominant_with_pooling.astype(np.uint8)
+    import pdb; pdb.set_trace()
 
     green_relative_intensity = np.max(leaf_image_float[:, :, 1][:, :, np.newaxis] / leaf_image_float[:, ..., :], axis=2)
     patches_gri = extract_patches_2d(green_relative_intensity, (patch_size, patch_size)).reshape(-1, patch_size ** 2)
