@@ -1,2 +1,4 @@
 .vscode/settings.json
 __pycache__/filter.cpython-37.pyc
+*jpg
+*png
