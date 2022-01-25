@@ -73,9 +73,8 @@ def get_gridview(pseudo_mask, num_divided_width=4):
             w_e_point = grid_size_w * (j + 1)
             green_area = np.sum(divided_green_dominant[:, w_s_point:w_e_point] == 0)
             average = green_area / (grid_size_h * grid_size_w)
-            # draw the average for middle of grid
-            text_point = (w_s_point + num_divided_width // 2, h_s_point + num_divided_height // 2)
             green_average[h_s_point:h_e_point, :][:, w_s_point:w_e_point] = average
+
     return  green_average
 
 
@@ -171,23 +170,22 @@ def main(input_path, hmin, hmax):
     leaf_image_rgb = cv2.cvtColor(leaf_image_bgr, cv2.COLOR_BGR2RGB)
     leaf_image_lsh = calculate_perception(rgb2lch(leaf_image_rgb))
     light_mask = extract_bright_area(leaf_image_lsh)
+
     # decide_hmin
-    if hmin == None and hmin == None:
-        hmax = decide_edge(light_mask, K_H_SIZE, SERCH_AREA)
+    if hmin is None:
         hmin=0
-    elif hmax == None:
+        print(f"hmin:{hmin},hmax:{hmax}")
+
+    # decide_hmax
+    if hmax is None:
         hmax = decide_edge(light_mask, K_H_SIZE, SERCH_AREA)
         print(f"hmin:{hmin},hmax:{hmax}")
-    elif hmin == None:
-        hmin = 0
 
     # Enable RoI
     leaf_image_bgr_crop = crop(leaf_image_bgr, hmin, hmax)
     leaf_image_rgb_crop = crop(leaf_image_rgb, hmin, hmax)
 
     # Binarization
-    # img_lch_crop = rgb2lch(leaf_image_rgb_crop)
-    # img_lsh_crop = calculate_perception(img_lch_crop)
     pseudo_mask = 255 - (extract_bright_area(leaf_image_lsh) & np.bitwise_not(extract_green_area(leaf_image_bgr)))
     pseudo_mask_crop = pseudo_mask[hmin:hmax]
 
