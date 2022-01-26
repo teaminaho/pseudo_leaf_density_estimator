@@ -5,7 +5,6 @@ from pathlib import Path
 from skimage.color import rgb2lab, lab2lch
 import toml
 import click
-import pdb
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 CONF_PATH = SCRIPT_DIR/"conf/conf.toml"
@@ -119,7 +118,6 @@ def discretize(gray_img):
     for num in range(len(bins)):
         v_max = bins[num]
         in_range = (v_min < gray_img) & (gray_img <= v_max)
-        # out[in_range] = v_max
         out[in_range] = convert_bins[num]
         v_min = v_max
     return out

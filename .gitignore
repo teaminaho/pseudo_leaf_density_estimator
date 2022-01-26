@@ -1,5 +1,6 @@
 .vscode/settings.json
 __pycache__/
+*.swp
 *.jpg
 *.png
 *.mp4
