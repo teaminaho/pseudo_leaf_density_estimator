@@ -9,10 +9,6 @@ import click
 SCRIPT_DIR = Path(__file__).parent.resolve()
 CONF_PATH = SCRIPT_DIR/"conf/conf.toml"
 OUTPUT_DIR = SCRIPT_DIR/"data/output"
-OUTPUT_DIR_RESULT = f"{OUTPUT_DIR}/result/"
-OUTPUT_DIR_EXGREEN = f"{OUTPUT_DIR}/ex_green/"
-OUTPUT_DIR_VALUES = f"{OUTPUT_DIR}/values/"
-OUTPUT_DIR_CONCAT = f"{OUTPUT_DIR}/concat/"
 
 with open(str(CONF_PATH), "r") as f:
     config = toml.load(f)
@@ -179,10 +175,6 @@ def main(input_path, hmin, hmax):
         hmax = decide_edge(light_mask, K_H_SIZE, SERCH_AREA)
         print(f"hmin:{hmin},hmax:{hmax}")
 
-    # Enable RoI
-    leaf_image_bgr_crop = crop(leaf_image_bgr, hmin, hmax)
-    leaf_image_rgb_crop = crop(leaf_image_rgb, hmin, hmax)
-
     # Binarization
     pseudo_mask = 255 - (extract_bright_area(leaf_image_lsh) & np.bitwise_not(extract_green_area(leaf_image_bgr)))
     pseudo_mask_crop = pseudo_mask[hmin:hmax]
@@ -209,10 +201,6 @@ def main(input_path, hmin, hmax):
     # output_all_images
     all_images_list = [leaf_image_bgr, pseudo_mask_bgr, overlay_heatmap, overlay_contour, overlay_grid]
     imwrite(input_path, hmin, hmax, all_images_list)
-    #origin,2value,ikeuchidivision
-    # imwrite(input_path, hmin, hmax,
-    #          [leaf_image_bgr, pseudo_mask_bgr, overlay_heatmap])
-
 
 if __name__ == "__main__":
     main()

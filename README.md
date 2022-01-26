@@ -1,3 +1,5 @@
-https://inaho-prj.slack.com/archives/CF0MB0TRN/p1628693716012300
-
+# Reference
 Please refer to https://inaho.esa.io/posts/495/edit#10 if you want to know how to use this soft.
+
+# Usage
+'''./main.py input_path --hmin ROI_min_value --hmax ROI_max_value'''
