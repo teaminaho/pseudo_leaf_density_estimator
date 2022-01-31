@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 from skimage.color import rgb2lab, lab2lch
+from skimage.measure import block_reduce
 import toml
 import click
 
@@ -29,7 +30,6 @@ def rgb2lch(rgbimg):
     img_lab = rgb2lab(rgbimg)
     return lab2lch(img_lab)
 
-
 def read_image(input_name):
     return cv2.imread(input_name)
 
@@ -48,30 +48,40 @@ def calculate_perception(img_lch):
     img_new[:, :, 1] = (255 * np.log10(img_new[:, :, 1] + 1) / np.log10(255)).astype(np.uint8)
     return img_new
 
-
 def get_gridview(pseudo_mask, num_divided_width=4):
-    # calculate width_size height_size depending on num_divided_width
-    num_divided_width = num_divided_width
+    green_average = pseudo_mask.copy()
     height_size, width_size = pseudo_mask.shape
     grid_size_w = int(width_size / num_divided_width)
     num_divided_height = int(height_size / grid_size_w)
     grid_size_h = int(height_size / num_divided_height)
-    # make zeros_array
-    green_average = np.zeros([height_size, width_size])
+    green_average = block_reduce(green_average, block_size=(grid_size_h, grid_size_w), func=np.mean)
+    green_average_expand = cv2.resize(green_average, dsize=(width_size, height_size), interpolation=cv2.INTER_NEAREST)
 
-    for i in range(num_divided_height):
-        h_s_point = grid_size_h * i
-        h_e_point = grid_size_h * (i + 1)
-        divided_green_dominant = pseudo_mask[h_s_point:h_e_point, :]
-        for j in range(num_divided_width):
-            w_s_point = grid_size_w * j
-            w_e_point = grid_size_w * (j + 1)
-            green_area = np.sum(divided_green_dominant[:, w_s_point:w_e_point] == 0)
-            average = green_area / (grid_size_h * grid_size_w)
-            green_average[h_s_point:h_e_point, :][:, w_s_point:w_e_point] = average
-
-    return  green_average
-
+    return  (255 - green_average_expand) / 255
+ 
+# def get_gridview(pseudo_mask, num_divided_width=4):
+#     # calculate width_size height_size depending on num_divided_width
+#     num_divided_width = num_divided_width
+#     height_size, width_size = pseudo_mask.shape
+#     grid_size_w = int(width_size / num_divided_width)
+#     num_divided_height = int(height_size / grid_size_w)
+#     grid_size_h = int(height_size / num_divided_height)
+#     print(grid_size_w, grid_size_h)
+#     # make zeros_array
+#     green_average = np.zeros([height_size, width_size])
+# 
+#     for i in range(num_divided_height):
+#         h_s_point = grid_size_h * i
+#         h_e_point = grid_size_h * (i + 1)
+#         divided_green_dominant = pseudo_mask[h_s_point:h_e_point, :]
+#         for j in range(num_divided_width):
+#             w_s_point = grid_size_w * j
+#             w_e_point = grid_size_w * (j + 1)
+#             green_area = np.sum(divided_green_dominant[:, w_s_point:w_e_point] == 0)
+#             average = green_area / (grid_size_h * grid_size_w)
+#             green_average[h_s_point:h_e_point, :][:, w_s_point:w_e_point] = average
+# 
+#     return  green_average
 
 def convert_color(output_img, condition_img, low_condition, high_condition, value):
     img_out = output_img.copy()
@@ -165,15 +175,15 @@ def main(input_path, hmin, hmax):
     leaf_image_lsh = calculate_perception(rgb2lch(leaf_image_rgb))
     light_mask = extract_bright_area(leaf_image_lsh)
 
+    
     # decide_hmin
     if hmin is None:
         hmin=0
-        print(f"hmin:{hmin},hmax:{hmax}")
 
     # decide_hmax
     if hmax is None:
         hmax = decide_edge(light_mask, K_H_SIZE, SERCH_AREA)
-        print(f"hmin:{hmin},hmax:{hmax}")
+    print(f"hmin:{hmin},hmax:{hmax}")
 
     # Binarization
     pseudo_mask = 255 - (extract_bright_area(leaf_image_lsh) & np.bitwise_not(extract_green_area(leaf_image_bgr)))
@@ -193,6 +203,7 @@ def main(input_path, hmin, hmax):
 
     # Visualization (grid)
     green_average = get_gridview(pseudo_mask_crop, num_divided_width=GRID_SIZE)
+    # green_averagea = get_gridviewa(pseudo_mask_crop, num_divided_width=GRID_SIZE)
     green_average_norm = normalize((1 - green_average) * 255, v_min=DENSITY_MIN)
     green_average_digi = discretize(green_average_norm)
     grid_img = cv2.applyColorMap(green_average_digi, cv2.COLORMAP_JET)
@@ -204,4 +215,3 @@ def main(input_path, hmin, hmax):
 
 if __name__ == "__main__":
     main()
-
