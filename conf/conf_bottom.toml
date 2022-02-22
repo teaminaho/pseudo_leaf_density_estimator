@@ -1,0 +1,9 @@
+# extract_pseudo
+lsh_lower = [20.0, 0.0, 0.0]
+lsh_upper = [100.0, 120.0, 7.0]
+hsv_lower = [35, 40, 50]
+hsv_upper = [80, 255, 255]
+
+# roi_area
+crop_rate = [3.0, 1.8, 1.2, 1.0]
+border_color = [[255, 0, 0], [0, 0, 255], [0, 255, 255], [0, 255, 0]]
