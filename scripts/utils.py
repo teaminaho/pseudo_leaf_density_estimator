@@ -19,8 +19,8 @@ def read_image(input_name):
 def imwrite(input_name, output_dir_pathlib, hmin, hmax, images):
     """Writes images horizontally concatenated into a single image file."""
     im_h = cv2.hconcat([draw_roi(img, hmin, hmax) for img in images])
-    output_path = str(output_dir_pathlib.joinpath(Path(input_name).stem + "_output.png"))
-    cv2.imwrite(output_path, im_h)
+    output_path = str(output_dir_pathlib.joinpath(Path(input_name).stem + "_output.jpg"))
+    cv2.imwrite(output_path, im_h, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
     print(f"Result image was saved at {output_path}")
 
 

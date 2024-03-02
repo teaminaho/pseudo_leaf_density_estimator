@@ -65,18 +65,17 @@ def main(input_path, conf_path, output_dir, hmin, hmax):
     print(f"hmin:{hmin},hmax:{hmax}")
 
     # Binarization
-    pseudo_mask = 255 - (
-        extract_bright_area(leaf_image_lsh, config.lsh_lower, config.lsh_upper)
-        & np.bitwise_not(extract_green_area(leaf_image_bgr, config.hsv_lower, config.hsv_upper))
-    )
-    pseudo_mask_crop = pseudo_mask[hmin:hmax]
+    bright_area_mask = extract_bright_area(leaf_image_lsh, config.lsh_lower, config.lsh_upper)
+    green_area_mask = extract_green_area(leaf_image_bgr, config.hsv_lower, config.hsv_upper)
+    leaf_area_mask = 255 - (bright_area_mask & np.bitwise_not(green_area_mask))
+    leaf_area_mask_crop = leaf_area_mask[hmin:hmax]
 
-    # Generate pseudo_mask_bgr Visualization (mask)
-    pseudo_mask_bgr = to_grayscale_with_roi(pseudo_mask, leaf_image_bgr.shape, hmin, hmax)
+    # Generate pseudo_leaf_are_mask_bgr Visualization (mask)
+    leaf_area_mask_3ch = to_grayscale_with_roi(leaf_area_mask, leaf_image_bgr.shape, hmin, hmax)
 
     # Visualization (heatmap)
     density_img = normalize(
-        cv2.blur(pseudo_mask_crop, (config.kernel_size, config.kernel_size)), v_min=config.density_min
+        cv2.blur(leaf_area_mask_crop, (config.kernel_size, config.kernel_size)), v_min=config.density_min
     )
     heatmap_img = cv2.applyColorMap(density_img, cv2.COLORMAP_JET)
     overlay_heatmap = alpha_blend(leaf_image_bgr, heatmap_img, hmin, hmax)
@@ -88,14 +87,14 @@ def main(input_path, conf_path, output_dir, hmin, hmax):
     overlay_contour = alpha_blend(leaf_image_bgr, contour_img, hmin, hmax)
 
     # Visualization (grid)
-    green_average = get_gridview(pseudo_mask_crop, num_divided_width=config.grid_size)
+    green_average = get_gridview(leaf_area_mask_crop, num_divided_width=config.grid_size)
     green_average_norm = normalize((1 - green_average) * 255, v_min=config.density_min)
     green_average_digi = discretize(green_average_norm, config.num_density_bins, config.divided_area)
     grid_img = cv2.applyColorMap(green_average_digi, cv2.COLORMAP_JET)
     overlay_grid = alpha_blend(leaf_image_bgr, grid_img, hmin, hmax)
 
     # Output all images
-    all_images_list = [leaf_image_bgr, pseudo_mask_bgr, overlay_heatmap, overlay_contour, overlay_grid]
+    all_images_list = [leaf_image_bgr, leaf_area_mask_3ch, overlay_heatmap, overlay_contour, overlay_grid]
     imwrite(input_path, output_dir_pathlib, hmin, hmax, all_images_list)
 
 
