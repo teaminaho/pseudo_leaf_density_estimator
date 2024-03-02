@@ -14,20 +14,29 @@ def rgb2lch(rgbimg):
     return lab2lch(img_lab)
 
 
-def extract_bright_area(img_lsh, lsh_lower, lsh_upper):
+def extract_bright_area(img_lsh, lsh_lower=[20.0, 0.0, 0.0], lsh_upper=[100.0, 120.0, 7.0]):
     """Extracts bright areas based on LSH color space thresholds."""
     return cv2.inRange(img_lsh, np.array(lsh_lower), np.array(lsh_upper))
 
 
-def extract_green_area(img_bgr, hsv_lower, hsv_upper):
+def extract_green_area(img_bgr, hsv_lower=[35, 40, 50], hsv_upper=[80, 255, 255]):
     """Extracts green areas based on HSV color space thresholds."""
     hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
     return cv2.inRange(hsv, np.array(hsv_lower), np.array(hsv_upper))
 
 
 def calculate_perception(img_lch):
-    """Enhances perception of LCH image."""
+    """
+    Enhances the perceptual contrast of an image in LCH color space by applying a logarithmic transformation to the Chroma component.
+
+    This method aims to mimic the logarithmic response of human vision to color and light,
+    thereby improving the visual contrast and vividness of colors in the image.
+    Low chroma values are made more distinct, while high chroma values are adjusted more subtly, enhancing overall image detail and color differentiation.
+    """
     img_new = img_lch.copy()
+
+    # Apply logarithmic scaling to Chroma to enhance contrast
+    # the formula adjusts Chroma based on human perceptual response to color saturation.
     img_new[:, :, 1] = (255 * np.log10(img_new[:, :, 1] + 1) / np.log10(255)).astype(np.uint8)
     return img_new
 
@@ -37,10 +46,12 @@ def get_gridview(pseudo_mask, num_divided_width=4):
 
     This function divides the image into uniform blocks, calculates the mean
     value of each block, and resizes the reduced image back to the original
-    size for visualization. The block size is calculated to ensure coverage
-    of the entire image, adding 1 to include any remainder not covered by
-    the division. Padding is added if the image size is not divisible by
-    the block size, but only as much as necessary to make the division even.
+    size for visualization.
+
+    The block size is calculated to ensure coverage of the entire image,
+    adding 1 to include any remainder not covered by the division.
+    Padding is added if the image size is not divisible by the block size,
+    but only as much as necessary to make the division even.
     """
     h_size, w_size = pseudo_mask.shape
 
