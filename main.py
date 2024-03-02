@@ -67,31 +67,6 @@ def get_gridview(pseudo_mask, num_divided_width=4):
     return (255 - green_average_expand) / 255
 
 
-# def get_gridview(pseudo_mask, num_divided_width=4):
-#     # calculate width_size height_size depending on num_divided_width
-#     num_divided_width = num_divided_width
-#     height_size, width_size = pseudo_mask.shape
-#     grid_size_w = int(width_size / num_divided_width)
-#     num_divided_height = int(height_size / grid_size_w)
-#     grid_size_h = int(height_size / num_divided_height)
-#     print(grid_size_w, grid_size_h)
-#     # make zeros_array
-#     green_average = np.zeros([height_size, width_size])
-#
-#     for i in range(num_divided_height):
-#         h_s_point = grid_size_h * i
-#         h_e_point = grid_size_h * (i + 1)
-#         divided_green_dominant = pseudo_mask[h_s_point:h_e_point, :]
-#         for j in range(num_divided_width):
-#             w_s_point = grid_size_w * j
-#             w_e_point = grid_size_w * (j + 1)
-#             green_area = np.sum(divided_green_dominant[:, w_s_point:w_e_point] == 0)
-#             average = green_area / (grid_size_h * grid_size_w)
-#             green_average[h_s_point:h_e_point, :][:, w_s_point:w_e_point] = average
-#
-#     return  green_average
-
-
 def convert_color(output_img, condition_img, low_condition, high_condition, value):
     img_out = output_img.copy()
     img_out[(low_condition < condition_img) & (condition_img <= high_condition)] = value
