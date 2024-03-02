@@ -33,15 +33,34 @@ def calculate_perception(img_lch):
 
 
 def get_gridview(pseudo_mask, num_divided_width=4):
-    """Generates a grid view representation of the pseudo mask."""
-    green_average = block_reduce(
-        pseudo_mask,
-        block_size=(pseudo_mask.shape[0] // num_divided_width, pseudo_mask.shape[1] // num_divided_width),
-        func=np.mean,
-    )
-    green_average_expand = cv2.resize(
-        green_average, (pseudo_mask.shape[1], pseudo_mask.shape[0]), interpolation=cv2.INTER_NEAREST
-    )
+    """Generates a grid view representation of the pseudo mask.
+
+    This function divides the image into uniform blocks, calculates the mean
+    value of each block, and resizes the reduced image back to the original
+    size for visualization. The block size is calculated to ensure coverage
+    of the entire image, adding 1 to include any remainder not covered by
+    the division. Padding is added if the image size is not divisible by
+    the block size, but only as much as necessary to make the division even.
+    """
+    h_size, w_size = pseudo_mask.shape
+
+    # Calculate block size; +1 ensures coverage of the entire image
+    block_size = (w_size // num_divided_width) + 1
+
+    # Calculate padding to make the image divisible by block size, add padding only if necessary
+    pad_h = (block_size - h_size % block_size) % block_size
+    pad_w = (block_size - w_size % block_size) % block_size
+
+    # Apply padding with mode 'edge' to avoid introducing artificial edges
+    padded_mask = np.pad(pseudo_mask, ((0, pad_h), (0, pad_w)), mode="edge")
+
+    # Reduce image size by calculating the mean value of each block
+    green_average = block_reduce(padded_mask, block_size=(block_size, block_size), func=np.mean)
+
+    # Resize the reduced image back to the original size for visualization
+    green_average_expand = cv2.resize(green_average, (w_size, h_size), interpolation=cv2.INTER_NEAREST)
+
+    # Return the grid view representation
     return (255 - green_average_expand) / 255
 
 
