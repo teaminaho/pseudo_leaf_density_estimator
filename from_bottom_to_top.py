@@ -92,9 +92,9 @@ def main(input_path, conf_path, output_dir, output_csv_name):
     leaf_image_lsh = calculate_perception(rgb2lch(leaf_image_rgb))
 
     # 疑似葉密度マスクを作成する
-    pseudo_leaf_density_mask = extract_bright_area(leaf_image_lsh, config.lsh_lower, config.lsh_upper) & np.bitwise_not(
-        extract_green_area(leaf_image_bgr, config.hsv_lower, config.hsv_upper)
-    )
+    pseudo_leaf_density_mask = 255 - extract_bright_area(
+        leaf_image_lsh, config.lsh_lower, config.lsh_upper
+    ) & np.bitwise_not(extract_green_area(leaf_image_bgr, config.hsv_lower, config.hsv_upper))
     pseudo_leaf_density_mask_3ch = cv2.cvtColor(pseudo_leaf_density_mask, cv2.COLOR_GRAY2BGR)
 
     # 画像を分割して擬似葉密度を計算する
