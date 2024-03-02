@@ -8,8 +8,8 @@ import toml
 import click
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-CONF_PATH = SCRIPT_DIR/"conf/conf.toml"
-OUTPUT_DIR = SCRIPT_DIR/"data/output"
+CONF_PATH = SCRIPT_DIR / "conf/conf.toml"
+OUTPUT_DIR = SCRIPT_DIR / "data/output"
 
 with open(str(CONF_PATH), "r") as f:
     config = toml.load(f)
@@ -24,11 +24,13 @@ NUM_DENSITY_BINS = config["num_density_bins"]
 DIV_AREA = config["divided_area"]
 
 K_H_SIZE = config["k_h_size"]
-SERCH_AREA= config["serch_area"]
+SERCH_AREA = config["serch_area"]
+
 
 def rgb2lch(rgbimg):
     img_lab = rgb2lab(rgbimg)
     return lab2lch(img_lab)
+
 
 def read_image(input_name):
     return cv2.imread(input_name)
@@ -48,6 +50,7 @@ def calculate_perception(img_lch):
     img_new[:, :, 1] = (255 * np.log10(img_new[:, :, 1] + 1) / np.log10(255)).astype(np.uint8)
     return img_new
 
+
 def get_gridview(pseudo_mask, num_divided_width=4):
     green_average = pseudo_mask.copy()
     height_size, width_size = pseudo_mask.shape
@@ -57,8 +60,9 @@ def get_gridview(pseudo_mask, num_divided_width=4):
     green_average = block_reduce(green_average, block_size=(grid_size_h, grid_size_w), func=np.mean)
     green_average_expand = cv2.resize(green_average, dsize=(width_size, height_size), interpolation=cv2.INTER_NEAREST)
 
-    return  (255 - green_average_expand) / 255
- 
+    return (255 - green_average_expand) / 255
+
+
 # def get_gridview(pseudo_mask, num_divided_width=4):
 #     # calculate width_size height_size depending on num_divided_width
 #     num_divided_width = num_divided_width
@@ -69,7 +73,7 @@ def get_gridview(pseudo_mask, num_divided_width=4):
 #     print(grid_size_w, grid_size_h)
 #     # make zeros_array
 #     green_average = np.zeros([height_size, width_size])
-# 
+#
 #     for i in range(num_divided_height):
 #         h_s_point = grid_size_h * i
 #         h_e_point = grid_size_h * (i + 1)
@@ -80,8 +84,9 @@ def get_gridview(pseudo_mask, num_divided_width=4):
 #             green_area = np.sum(divided_green_dominant[:, w_s_point:w_e_point] == 0)
 #             average = green_area / (grid_size_h * grid_size_w)
 #             green_average[h_s_point:h_e_point, :][:, w_s_point:w_e_point] = average
-# 
+#
 #     return  green_average
+
 
 def convert_color(output_img, condition_img, low_condition, high_condition, value):
     img_out = output_img.copy()
@@ -91,9 +96,9 @@ def convert_color(output_img, condition_img, low_condition, high_condition, valu
 
 def gray2bgr(gray_image, shape, hmin, hmax):
     image = np.zeros(shape, dtype=np.uint8)
-    image[:,:, 0] = gray_image
-    image[:,:, 1] = gray_image
-    image[:,:, 2] = gray_image
+    image[:, :, 0] = gray_image
+    image[:, :, 1] = gray_image
+    image[:, :, 2] = gray_image
     draw_roi(image, hmin, hmax)
     return image
 
@@ -108,19 +113,19 @@ def alpha_blend(img1, img2, hmin=0, hmax=None, alpha=0.4):
 def imwrite(input_name, hmin, hmax, images):
     im_h = cv2.hconcat([draw_roi(img, hmin, hmax) for img in images])
     print(str(OUTPUT_DIR) + Path(input_name).stem)
-    cv2.imwrite(str(OUTPUT_DIR)+ "/" + Path(input_name).stem + "_output.png", im_h)
+    cv2.imwrite(str(OUTPUT_DIR) + "/" + Path(input_name).stem + "_output.png", im_h)
 
 
 def normalize(gray_img, v_min):
     float_img = gray_img.astype(float)
-    return (np.clip(float_img - v_min, 0., None) / (255. - v_min) * 255.).astype(np.uint8)
+    return (np.clip(float_img - v_min, 0.0, None) / (255.0 - v_min) * 255.0).astype(np.uint8)
 
 
 def discretize(gray_img):
     bins = np.array(DIV_AREA).astype(np.uint8)[1:]
     convert_bins = np.linspace(0, 255, NUM_DENSITY_BINS + 1).astype(np.uint8)[1:]
     out = gray_img.copy()
-    v_min = -1.
+    v_min = -1.0
     for num in range(len(bins)):
         v_max = bins[num]
         in_range = (v_min < gray_img) & (gray_img <= v_max)
@@ -138,8 +143,9 @@ def draw_roi(img, hmin, hmax):
 def crop(img, hmin, hmax):
     return img[hmin:hmax, :, :]
 
+
 def decide_edge(mask_img, k_h_size, serching_range):
-    h, w = mask_img.shape 
+    h, w = mask_img.shape
     h1, h2 = serching_range
     img_extract_crop = mask_img[h1:h2]
 
@@ -150,12 +156,12 @@ def decide_edge(mask_img, k_h_size, serching_range):
         sys.exit()
     else:
         kernel = np.ones((k_h_size, w))
-        kernel[int(k_h_size/2):] = -1
+        kernel[int(k_h_size / 2) :] = -1
 
     # 空間フィルター適用 (h,w) -> h
     img_edge = np.zeros(img_extract_crop.shape[0])
-    for i in range(0, (h2-h1) - k_h_size):
-        value = np.sum(img_extract_crop[i:k_h_size + i] * kernel)
+    for i in range(0, (h2 - h1) - k_h_size):
+        value = np.sum(img_extract_crop[i : k_h_size + i] * kernel)
         img_edge[i] = value
 
     # max edge index is under border line
@@ -163,10 +169,11 @@ def decide_edge(mask_img, k_h_size, serching_range):
     h_max = h_max_crop + serching_range[0]
     return h_max
 
+
 @click.command()
-@click.argument('input_path')
-@click.option('--hmin', type=int)
-@click.option('--hmax', type=int)
+@click.argument("input_path")
+@click.option("--hmin", type=int)
+@click.option("--hmax", type=int)
 def main(input_path, hmin, hmax):
     print(f"input_path: {input_path}, hmin: {hmin}, hmax: {hmax}")
     # Input (original image)
@@ -175,10 +182,9 @@ def main(input_path, hmin, hmax):
     leaf_image_lsh = calculate_perception(rgb2lch(leaf_image_rgb))
     light_mask = extract_bright_area(leaf_image_lsh)
 
-    
     # decide_hmin
     if hmin is None:
-        hmin=0
+        hmin = 0
 
     # decide_hmax
     if hmax is None:
@@ -189,7 +195,7 @@ def main(input_path, hmin, hmax):
     pseudo_mask = 255 - (extract_bright_area(leaf_image_lsh) & np.bitwise_not(extract_green_area(leaf_image_bgr)))
     pseudo_mask_crop = pseudo_mask[hmin:hmax]
 
-    #pseudo_mask_bgr Visualization (mask)
+    # pseudo_mask_bgr Visualization (mask)
     pseudo_mask_bgr = gray2bgr(pseudo_mask, leaf_image_bgr.shape, hmin, hmax)
 
     # Visualization (heatmap)
@@ -212,6 +218,7 @@ def main(input_path, hmin, hmax):
     # output_all_images
     all_images_list = [leaf_image_bgr, pseudo_mask_bgr, overlay_heatmap, overlay_contour, overlay_grid]
     imwrite(input_path, hmin, hmax, all_images_list)
+
 
 if __name__ == "__main__":
     main()
