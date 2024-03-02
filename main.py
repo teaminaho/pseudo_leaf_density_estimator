@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import cv2
 import numpy as np
 from pathlib import Path
@@ -10,9 +11,12 @@ import click
 SCRIPT_DIR = Path(__file__).parent.resolve()
 CONF_PATH = SCRIPT_DIR / "conf/conf.toml"
 OUTPUT_DIR = SCRIPT_DIR / "data/output"
+if not OUTPUT_DIR.exists():
+    OUTPUT_DIR.mkdir(parents=True)
 
 with open(str(CONF_PATH), "r") as f:
     config = toml.load(f)
+
 LSH_LOWER = config["lsh_lower"]
 LSH_UPPER = config["lsh_upper"]
 HSV_LOWER = config["hsv_lower"]
@@ -112,8 +116,9 @@ def alpha_blend(img1, img2, hmin=0, hmax=None, alpha=0.4):
 
 def imwrite(input_name, hmin, hmax, images):
     im_h = cv2.hconcat([draw_roi(img, hmin, hmax) for img in images])
-    print(str(OUTPUT_DIR) + Path(input_name).stem)
-    cv2.imwrite(str(OUTPUT_DIR) + "/" + Path(input_name).stem + "_output.png", im_h)
+    output_path = str(OUTPUT_DIR.joinpath(Path(input_name).stem + "_output.png"))
+    cv2.imwrite(output_path, im_h)
+    print(f"Result image was saved at {output_path}")
 
 
 def normalize(gray_img, v_min):

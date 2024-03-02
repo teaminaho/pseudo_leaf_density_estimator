@@ -3,3 +3,4 @@ opencv-python==4.5.4.60
 matplotlib==3.5.1
 scikit-image==0.19.1
 click==8.0.3
+toml==0.10.2
