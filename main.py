@@ -14,22 +14,6 @@ OUTPUT_DIR = SCRIPT_DIR / "data/output"
 if not OUTPUT_DIR.exists():
     OUTPUT_DIR.mkdir(parents=True)
 
-with open(str(CONF_PATH), "r") as f:
-    config = toml.load(f)
-
-LSH_LOWER = config["lsh_lower"]
-LSH_UPPER = config["lsh_upper"]
-HSV_LOWER = config["hsv_lower"]
-HSV_UPPER = config["hsv_upper"]
-GRID_SIZE = config["grid_size"]
-DENSITY_MIN = config["density_min"]
-KERNEL_SIZE = config["kernel_size"]
-NUM_DENSITY_BINS = config["num_density_bins"]
-DIV_AREA = config["divided_area"]
-
-K_H_SIZE = config["k_h_size"]
-SERCH_AREA = config["serch_area"]
-
 
 def rgb2lch(rgbimg):
     img_lab = rgb2lab(rgbimg)
@@ -40,13 +24,13 @@ def read_image(input_name):
     return cv2.imread(input_name)
 
 
-def extract_bright_area(img_lsh):
-    return cv2.inRange(img_lsh, np.array(LSH_LOWER), np.array(LSH_UPPER))
+def extract_bright_area(img_lsh, lsh_lower, lsh_upper):
+    return cv2.inRange(img_lsh, np.array(lsh_lower), np.array(lsh_upper))
 
 
-def extract_green_area(img_bgr):
+def extract_green_area(img_bgr, hsv_lower, hsv_upper):
     hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-    return cv2.inRange(hsv, np.array(HSV_LOWER), np.array(HSV_UPPER))
+    return cv2.inRange(hsv, np.array(hsv_lower), np.array(hsv_upper))
 
 
 def calculate_perception(img_lch):
@@ -101,9 +85,9 @@ def normalize(gray_img, v_min):
     return (np.clip(float_img - v_min, 0.0, None) / (255.0 - v_min) * 255.0).astype(np.uint8)
 
 
-def discretize(gray_img):
-    bins = np.array(DIV_AREA).astype(np.uint8)[1:]
-    convert_bins = np.linspace(0, 255, NUM_DENSITY_BINS + 1).astype(np.uint8)[1:]
+def discretize(gray_img, num_density_bins, div_area):
+    bins = np.array(div_area).astype(np.uint8)[1:]
+    convert_bins = np.linspace(0, 255, num_density_bins + 1).astype(np.uint8)[1:]
     out = gray_img.copy()
     v_min = -1.0
     for num in range(len(bins)):
@@ -125,7 +109,7 @@ def crop(img, hmin, hmax):
 
 
 def decide_edge(mask_img, k_h_size, serching_range):
-    h, w = mask_img.shape
+    _, w = mask_img.shape
     h1, h2 = serching_range
     img_extract_crop = mask_img[h1:h2]
 
@@ -156,11 +140,15 @@ def decide_edge(mask_img, k_h_size, serching_range):
 @click.option("--hmax", type=int)
 def main(input_path, hmin, hmax):
     print(f"input_path: {input_path}, hmin: {hmin}, hmax: {hmax}")
+
+    with open(str(CONF_PATH), "r") as f:
+        config = toml.load(f)
+
     # Input (original image)
     leaf_image_bgr = read_image(input_path)
     leaf_image_rgb = cv2.cvtColor(leaf_image_bgr, cv2.COLOR_BGR2RGB)
     leaf_image_lsh = calculate_perception(rgb2lch(leaf_image_rgb))
-    light_mask = extract_bright_area(leaf_image_lsh)
+    light_mask = extract_bright_area(leaf_image_lsh, config["lsh_lower"], config["lsh_upper"])
 
     # decide_hmin
     if hmin is None:
@@ -168,34 +156,40 @@ def main(input_path, hmin, hmax):
 
     # decide_hmax
     if hmax is None:
-        hmax = decide_edge(light_mask, K_H_SIZE, SERCH_AREA)
+        hmax = decide_edge(light_mask, config["k_h_size"], config["serch_area"])
     print(f"hmin:{hmin},hmax:{hmax}")
 
     # Binarization
-    pseudo_mask = 255 - (extract_bright_area(leaf_image_lsh) & np.bitwise_not(extract_green_area(leaf_image_bgr)))
+    pseudo_mask = 255 - (
+        extract_bright_area(leaf_image_lsh, config["lsh_lower"], config["lsh_upper"])
+        & np.bitwise_not(extract_green_area(leaf_image_bgr, config["hsv_lower"], config["hsv_upper"]))
+    )
     pseudo_mask_crop = pseudo_mask[hmin:hmax]
 
     # pseudo_mask_bgr Visualization (mask)
     pseudo_mask_bgr = gray2bgr(pseudo_mask, leaf_image_bgr.shape, hmin, hmax)
 
     # Visualization (heatmap)
-    density_img = normalize(cv2.blur(pseudo_mask_crop, (KERNEL_SIZE, KERNEL_SIZE)), v_min=DENSITY_MIN)
+    density_img = normalize(
+        cv2.blur(pseudo_mask_crop, (config["kernel_size"], config["kernel_size"])), v_min=config["density_min"]
+    )
     heatmap_img = cv2.applyColorMap(density_img, cv2.COLORMAP_JET)
     overlay_heatmap = alpha_blend(leaf_image_bgr, heatmap_img, hmin, hmax)
 
     # Visualization (contour)
-    contour_img = cv2.applyColorMap(discretize(density_img), cv2.COLORMAP_JET)
+    contour_img = cv2.applyColorMap(
+        discretize(density_img, config["num_density_bins"], config["divided_area"]), cv2.COLORMAP_JET
+    )
     overlay_contour = alpha_blend(leaf_image_bgr, contour_img, hmin, hmax)
 
     # Visualization (grid)
-    green_average = get_gridview(pseudo_mask_crop, num_divided_width=GRID_SIZE)
-    # green_averagea = get_gridviewa(pseudo_mask_crop, num_divided_width=GRID_SIZE)
-    green_average_norm = normalize((1 - green_average) * 255, v_min=DENSITY_MIN)
-    green_average_digi = discretize(green_average_norm)
+    green_average = get_gridview(pseudo_mask_crop, num_divided_width=config["grid_size"])
+    green_average_norm = normalize((1 - green_average) * 255, v_min=config["density_min"])
+    green_average_digi = discretize(green_average_norm, config["num_density_bins"], config["divided_area"])
     grid_img = cv2.applyColorMap(green_average_digi, cv2.COLORMAP_JET)
     overlay_grid = alpha_blend(leaf_image_bgr, grid_img, hmin, hmax)
 
-    # output_all_images
+    # Output all images
     all_images_list = [leaf_image_bgr, pseudo_mask_bgr, overlay_heatmap, overlay_contour, overlay_grid]
     imwrite(input_path, hmin, hmax, all_images_list)
 
