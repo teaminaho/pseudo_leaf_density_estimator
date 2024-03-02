@@ -1,141 +1,23 @@
 #!/usr/bin/env python3
-import sys
 import cv2
-import numpy as np
-from pathlib import Path
-from skimage.color import rgb2lab, lab2lch
-from skimage.measure import block_reduce
 import toml
 import click
+import numpy as np
+from pathlib import Path
+from scripts.utils import create_output_dir, read_image, imwrite, to_grayscale_with_roi, alpha_blend
+from scripts.leaf_density_index import (
+    rgb2lch,
+    extract_bright_area,
+    extract_green_area,
+    calculate_perception,
+    get_gridview,
+    normalize,
+    discretize,
+    decide_edge,
+)
+
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-
-
-def create_output_dir(output_dir):
-    output_dir_path = Path(output_dir)
-    if not output_dir_path.exists():
-        output_dir_path.mkdir(parents=True)
-    return output_dir_path
-
-
-def rgb2lch(rgbimg):
-    img_lab = rgb2lab(rgbimg)
-    return lab2lch(img_lab)
-
-
-def read_image(input_name):
-    return cv2.imread(input_name)
-
-
-def extract_bright_area(img_lsh, lsh_lower, lsh_upper):
-    return cv2.inRange(img_lsh, np.array(lsh_lower), np.array(lsh_upper))
-
-
-def extract_green_area(img_bgr, hsv_lower, hsv_upper):
-    hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-    return cv2.inRange(hsv, np.array(hsv_lower), np.array(hsv_upper))
-
-
-def calculate_perception(img_lch):
-    img_new = img_lch.copy()
-    img_new[:, :, 1] = (255 * np.log10(img_new[:, :, 1] + 1) / np.log10(255)).astype(np.uint8)
-    return img_new
-
-
-def get_gridview(pseudo_mask, num_divided_width=4):
-    green_average = pseudo_mask.copy()
-    height_size, width_size = pseudo_mask.shape
-    grid_size_w = int(width_size / num_divided_width)
-    num_divided_height = int(height_size / grid_size_w)
-    grid_size_h = int(height_size / num_divided_height)
-    green_average = block_reduce(green_average, block_size=(grid_size_h, grid_size_w), func=np.mean)
-    green_average_expand = cv2.resize(green_average, dsize=(width_size, height_size), interpolation=cv2.INTER_NEAREST)
-
-    return (255 - green_average_expand) / 255
-
-
-def convert_color(output_img, condition_img, low_condition, high_condition, value):
-    img_out = output_img.copy()
-    img_out[(low_condition < condition_img) & (condition_img <= high_condition)] = value
-    return img_out
-
-
-def gray2bgr(gray_image, shape, hmin, hmax):
-    image = np.zeros(shape, dtype=np.uint8)
-    image[:, :, 0] = gray_image
-    image[:, :, 1] = gray_image
-    image[:, :, 2] = gray_image
-    draw_roi(image, hmin, hmax)
-    return image
-
-
-def alpha_blend(img1, img2, hmin=0, hmax=None, alpha=0.4):
-    img2_expand = np.zeros(img1.shape, dtype=np.uint8)
-    img2_expand[hmin:hmax] = img2
-    overlay_img = (alpha * img1 + (1 - alpha) * img2_expand).astype(np.uint8)
-    return overlay_img
-
-
-def imwrite(input_name, output_dir_pathlib, hmin, hmax, images):
-    im_h = cv2.hconcat([draw_roi(img, hmin, hmax) for img in images])
-    output_path = str(output_dir_pathlib.joinpath(Path(input_name).stem + "_output.png"))
-    cv2.imwrite(output_path, im_h)
-    print(f"Result image was saved at {output_path}")
-
-
-def normalize(gray_img, v_min):
-    float_img = gray_img.astype(float)
-    return (np.clip(float_img - v_min, 0.0, None) / (255.0 - v_min) * 255.0).astype(np.uint8)
-
-
-def discretize(gray_img, num_density_bins, div_area):
-    bins = np.array(div_area).astype(np.uint8)[1:]
-    convert_bins = np.linspace(0, 255, num_density_bins + 1).astype(np.uint8)[1:]
-    out = gray_img.copy()
-    v_min = -1.0
-    for num in range(len(bins)):
-        v_max = bins[num]
-        in_range = (v_min < gray_img) & (gray_img <= v_max)
-        out[in_range] = convert_bins[num]
-        v_min = v_max
-    return out
-
-
-def draw_roi(img, hmin, hmax):
-    pt1 = (-1, hmax)
-    pt2 = (img.shape[1], hmin)
-    return cv2.rectangle(img, pt1, pt2, (0, 255, 0), thickness=3)
-
-
-def crop(img, hmin, hmax):
-    return img[hmin:hmax, :, :]
-
-
-def decide_edge(mask_img, k_h_size, serching_range):
-    _, w = mask_img.shape
-    h1, h2 = serching_range
-    img_extract_crop = mask_img[h1:h2]
-
-    # Edge extraction
-
-    # define kernel
-    if k_h_size % 2 != 0:
-        print("hight_size is not else. so you should put else hight_size")
-        sys.exit()
-    else:
-        kernel = np.ones((k_h_size, w))
-        kernel[int(k_h_size / 2) :] = -1
-
-    # Spatial filter application (h,w) -> h
-    img_edge = np.zeros(img_extract_crop.shape[0])
-    for i in range(0, (h2 - h1) - k_h_size):
-        value = np.sum(img_extract_crop[i : k_h_size + i] * kernel)
-        img_edge[i] = value
-
-    # max edge index is under border line
-    h_max_crop = np.argmax(img_edge)
-    h_max = h_max_crop + serching_range[0]
-    return h_max
 
 
 @click.command(help="A script for processing images to calculate a pseudo leaf density index.")
@@ -191,7 +73,7 @@ def main(input_path, conf_path, output_dir, hmin, hmax):
     pseudo_mask_crop = pseudo_mask[hmin:hmax]
 
     # Generate pseudo_mask_bgr Visualization (mask)
-    pseudo_mask_bgr = gray2bgr(pseudo_mask, leaf_image_bgr.shape, hmin, hmax)
+    pseudo_mask_bgr = to_grayscale_with_roi(pseudo_mask, leaf_image_bgr.shape, hmin, hmax)
 
     # Visualization (heatmap)
     density_img = normalize(
