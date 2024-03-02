@@ -9,10 +9,13 @@ import toml
 import click
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-CONF_PATH = SCRIPT_DIR / "conf/conf.toml"
-OUTPUT_DIR = SCRIPT_DIR / "data/output"
-if not OUTPUT_DIR.exists():
-    OUTPUT_DIR.mkdir(parents=True)
+
+
+def create_output_dir(output_dir):
+    output_dir_path = Path(output_dir)
+    if not output_dir_path.exists():
+        output_dir_path.mkdir(parents=True)
+    return output_dir_path
 
 
 def rgb2lch(rgbimg):
@@ -73,9 +76,9 @@ def alpha_blend(img1, img2, hmin=0, hmax=None, alpha=0.4):
     return overlay_img
 
 
-def imwrite(input_name, hmin, hmax, images):
+def imwrite(input_name, output_dir_pathlib, hmin, hmax, images):
     im_h = cv2.hconcat([draw_roi(img, hmin, hmax) for img in images])
-    output_path = str(OUTPUT_DIR.joinpath(Path(input_name).stem + "_output.png"))
+    output_path = str(output_dir_pathlib.joinpath(Path(input_name).stem + "_output.png"))
     cv2.imwrite(output_path, im_h)
     print(f"Result image was saved at {output_path}")
 
@@ -113,7 +116,8 @@ def decide_edge(mask_img, k_h_size, serching_range):
     h1, h2 = serching_range
     img_extract_crop = mask_img[h1:h2]
 
-    # extract edge
+    # Edge extraction
+
     # define kernel
     if k_h_size % 2 != 0:
         print("hight_size is not else. so you should put else hight_size")
@@ -122,7 +126,7 @@ def decide_edge(mask_img, k_h_size, serching_range):
         kernel = np.ones((k_h_size, w))
         kernel[int(k_h_size / 2) :] = -1
 
-    # 空間フィルター適用 (h,w) -> h
+    # Spatial filter application (h,w) -> h
     img_edge = np.zeros(img_extract_crop.shape[0])
     for i in range(0, (h2 - h1) - k_h_size):
         value = np.sum(img_extract_crop[i : k_h_size + i] * kernel)
@@ -134,15 +138,35 @@ def decide_edge(mask_img, k_h_size, serching_range):
     return h_max
 
 
-@click.command()
-@click.argument("input_path")
-@click.option("--hmin", type=int)
-@click.option("--hmax", type=int)
-def main(input_path, hmin, hmax):
+@click.command(help="A script for processing images to calculate a pseudo leaf density index.")
+@click.argument("input_path", type=click.Path(exists=True))
+@click.option(
+    "--conf-path",
+    "conf_path",
+    default=SCRIPT_DIR.joinpath("conf", "conf.toml"),
+    type=click.Path(exists=True),
+    help="Path to the configuration file (in TOML format).",
+)
+@click.option(
+    "--output-dir",
+    "output_dir",
+    default=SCRIPT_DIR.joinpath("output"),
+    type=click.Path(),
+    help="Path to the directory where output images will be saved.",
+)
+@click.option("--hmin", type=int, default=None, help="Starting height for image cropping. Defaults to 0 if omitted.")
+@click.option(
+    "--hmax", type=int, default=None, help="Ending height for image cropping. Automatically calculated if omitted."
+)
+def main(input_path, conf_path, output_dir, hmin, hmax):
     print(f"input_path: {input_path}, hmin: {hmin}, hmax: {hmax}")
 
-    with open(str(CONF_PATH), "r") as f:
+    # Load configuration
+    with open(str(conf_path), "r") as f:
         config = toml.load(f)
+
+    # Create output directory
+    output_dir_pathlib = create_output_dir(output_dir)
 
     # Input (original image)
     leaf_image_bgr = read_image(input_path)
@@ -166,7 +190,7 @@ def main(input_path, hmin, hmax):
     )
     pseudo_mask_crop = pseudo_mask[hmin:hmax]
 
-    # pseudo_mask_bgr Visualization (mask)
+    # Generate pseudo_mask_bgr Visualization (mask)
     pseudo_mask_bgr = gray2bgr(pseudo_mask, leaf_image_bgr.shape, hmin, hmax)
 
     # Visualization (heatmap)
@@ -191,7 +215,7 @@ def main(input_path, hmin, hmax):
 
     # Output all images
     all_images_list = [leaf_image_bgr, pseudo_mask_bgr, overlay_heatmap, overlay_contour, overlay_grid]
-    imwrite(input_path, hmin, hmax, all_images_list)
+    imwrite(input_path, output_dir_pathlib, hmin, hmax, all_images_list)
 
 
 if __name__ == "__main__":
