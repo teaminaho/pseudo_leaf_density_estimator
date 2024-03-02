@@ -97,26 +97,6 @@ def discretize(gray_img):
         v_min = v_max
     return out
 
-    # extract edge
-    # define kernel
-    if k_h_size % 2 != 0:
-        print("hight_size is not else. so you should put else hight_size")
-        sys.exit()
-    else:
-        kernel = np.ones((k_h_size, w))
-        kernel[int(k_h_size / 2) :] = -1
-
-    # 空間フィルター適用 (h,w) -> h
-    img_edge = np.zeros(img_extract_crop.shape[0])
-    for i in range(0, (h2 - h1) - k_h_size):
-        value = np.sum(img_extract_crop[i : k_h_size + i] * kernel)
-        img_edge[i] = value
-
-    # max edge index is under border line
-    h_max_crop = np.argmax(img_edge)
-    h_max = h_max_crop + serching_range[0]
-    return h_max
-
 
 def calc_pseurate(border_draw_img, pseudo_mask, crop_rate: int, color):
     h, w, _ = pseudo_mask.shape
