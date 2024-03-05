@@ -28,3 +28,5 @@ Please refer to https://inaho.esa.io/posts/495/edit#10 if you want to know how t
 ```
 ./main.py data/ikeuchi_anno_data/sample_images/20211005_132152.jpg --hmin 0 --hmax 2500
 ```
+
+![結果画像の例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/refactor/output/20211005_132152_output.jpg)
