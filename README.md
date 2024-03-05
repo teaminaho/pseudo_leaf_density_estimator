@@ -23,8 +23,8 @@ Please refer to https://inaho.esa.io/posts/495/edit#10 if you want to know how t
 
 ### 使用例
 
-以下のコマンド例では、`data/origin_data/hoge.jpg`を処理対象の画像として、切り取り開始高さを`0`、切り取り終了高さを`2800`として指定します。
+以下のコマンド例では、サンプル画像に対して、切り取り開始高さを`0`、切り取り終了高さを`2500`と指定した形で結果画像を生成します。
 
 ```
-./main.py data/origin_data/hoge.jpg --hmin 0 --hmax 2800
+./main.py data/ikeuchi_anno_data/sample_images/20211005_132152.jpg --hmin 0 --hmax 2500
 ```
