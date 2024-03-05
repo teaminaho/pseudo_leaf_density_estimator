@@ -1,6 +1,7 @@
 import sys
 import cv2
 import numpy as np
+from typing import List
 from pathlib import Path
 from skimage.color import rgb2lab, lab2lch
 from skimage.measure import block_reduce
@@ -81,7 +82,7 @@ def normalize(gray_img, v_min):
     return (np.clip(float_img - v_min, 0.0, None) / (255.0 - v_min) * 255.0).astype(np.uint8)
 
 
-def discretize(gray_img, num_density_bins, div_area):
+def discretize(gray_img, num_density_bins: int = 4, div_area: List[int] = [0, 30, 170, 240, 255]):
     """Discretizes a grayscale image into specified number of density bins."""
     bins = np.array(div_area).astype(np.uint8)[1:]
     convert_bins = np.linspace(0, 255, num_density_bins + 1).astype(np.uint8)[1:]
