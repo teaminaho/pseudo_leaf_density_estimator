@@ -1,6 +1,6 @@
 .vscode/settings.json
+pyproject.toml
 __pycache__/
 *.swp
-*.jpg
 *.png
 *.mp4

@@ -1,9 +1,9 @@
-import cv2 
-import numpy as np
+import cv2
 import click
 
+
 @click.command()
-@click.argument('input_path')
+@click.argument("input_path")
 def main(input_path):
     img = cv2.imread(input_path)
     h, w, _ = img.shape

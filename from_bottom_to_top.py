@@ -1,169 +1,131 @@
-#!/usr/bin/env python3
-import os
 import cv2
 import numpy as np
 from pathlib import Path
-from skimage.color import rgb2lab, lab2lch
-from skimage.measure import block_reduce
-import toml
 import click
+from scripts.utils import create_output_dir, read_image
+from scripts.leaf_density_index import (
+    rgb2lch,
+    extract_bright_area,
+    extract_green_area,
+    calculate_perception,
+)
+from scripts.config import LDIConfig
+
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-CONF_PATH = SCRIPT_DIR/"conf/conf_bottom.toml"
-OUTPUT_DIR = SCRIPT_DIR/"data/output"
-
-with open(str(CONF_PATH), "r") as f:
-    config = toml.load(f)
-LSH_LOWER = config["lsh_lower"]
-LSH_UPPER = config["lsh_upper"]
-HSV_LOWER = config["hsv_lower"]
-HSV_UPPER = config["hsv_upper"]
-CROP_RATE = config["crop_rate"]
-BORDER_COLOR = config["border_color"]
-
-def rgb2lch(rgbimg):
-    img_lab = rgb2lab(rgbimg)
-    return lab2lch(img_lab)
-
-def read_image(input_name):
-    return cv2.imread(input_name)
 
 
-def extract_bright_area(img_lsh):
-    return cv2.inRange(img_lsh, np.array(LSH_LOWER), np.array(LSH_UPPER))
+def calculate_pseudo_leaf_density_rate(image_with_border, leaf_area_mask, crop_ratio_h: int, border_color):
+    """
+    Calculates the pseudo leaf density rate within a specified crop area of the image and draws the area on the image.
 
+    Args:
+        image_with_border (numpy.ndarray): The original image where the crop area will be visualized with a border.
+        leaf_area_mask (numpy.ndarray): The leaf area mask to calculate the density rate.
+        crop_ratio_h (int): The ratio to determine the height of the crop area based on the image height.
+        border_color (List[int]): The color of the border to draw the crop area.
 
-def extract_green_area(img_bgr):
-    hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-    return cv2.inRange(hsv, np.array(HSV_LOWER), np.array(HSV_UPPER))
+    Returns:
+        Tuple[float, numpy.ndarray, numpy.ndarray]:
+            - The calculated pseudo leaf density rate within the crop area.
+            - The original image with the crop area visualized by a border.
+            - The pseudo leaf density mask with the crop area visualized by a border.
+    """
+    # Determine the dimensions of the image
+    height, width, _ = leaf_area_mask.shape
 
+    # Calculate the middle point of the image
+    mid_point = (width // 2, height // 2)
 
-def calculate_perception(img_lch):
-    img_new = img_lch.copy()
-    img_new[:, :, 1] = (255 * np.log10(img_new[:, :, 1] + 1) / np.log10(255)).astype(np.uint8)
-    return img_new
+    # Calculate the start and end points of the crop area based on the crop ratio
+    start_height = mid_point[1] - int(height * crop_ratio_h / 2)
+    end_height = mid_point[1] + int(height * crop_ratio_h / 2)
 
-def get_gridview(pseudo_mask, num_divided_width=4):
-    green_average = pseudo_mask.copy()
-    h_size, w_size = pseudo_mask.shape
-    block = (w_size // num_divided_width) + 1
-    w_pad = block - (w_size % (block))
-    h_pad = block - (h_size % block)
-    green_average = np.pad(green_average, ([0, h_pad], [0, w_pad]), mode="edge")
-    green_average = block_reduce(green_average, block_size=(block, block), func=np.mean)
-    green_average_expand = cv2.resize(green_average, dsize=(w_size, h_size), interpolation=cv2.INTER_NEAREST)
-    return  (255 - green_average_expand) / 255
+    # Crop the mask image to calculate the density rate
+    cropped_mask = leaf_area_mask[start_height:end_height]
 
+    # Calculate the rate of pseudo leaf density (ratio of white pixels in the cropped area)
+    density_rate = np.sum(cropped_mask > 0) / cropped_mask.size
 
-def convert_color(output_img, condition_img, low_condition, high_condition, value):
-    img_out = output_img.copy()
-    img_out[(low_condition < condition_img) & (condition_img <= high_condition)] = value
-    return img_out
+    # Draw the crop area on the original image and the mask image
+    image_with_crop_border = cv2.rectangle(
+        image_with_border, (0, start_height), (width, end_height), color=border_color, thickness=3
+    )
+    mask_with_crop_border = cv2.rectangle(
+        leaf_area_mask, (0, start_height), (width, end_height), color=border_color, thickness=3
+    )
 
+    return density_rate, image_with_crop_border, mask_with_crop_border
 
-def gray2bgr(gray_image, shape, hmin, hmax):
-    image = np.zeros(shape, dtype=np.uint8)
-    image[:,:, 0] = gray_image
-    image[:,:, 1] = gray_image
-    image[:,:, 2] = gray_image
-    draw_roi(image, hmin, hmax)
-    return image
-
-
-def alpha_blend(img1, img2, hmin=0, hmax=None, alpha=0.4):
-    img2_expand = np.zeros(img1.shape, dtype=np.uint8)
-    img2_expand[hmin:hmax] = img2
-    overlay_img = (alpha * img1 + (1 - alpha) * img2_expand).astype(np.uint8)
-    return overlay_img
-
-
-def normalize(gray_img, v_min):
-    float_img = gray_img.astype(float)
-    return (np.clip(float_img - v_min, 0., None) / (255. - v_min) * 255.).astype(np.uint8)
-
-
-def discretize(gray_img):
-    bins = np.array(DIV_AREA).astype(np.uint8)[1:]
-    convert_bins = np.linspace(0, 255, NUM_DENSITY_BINS + 1).astype(np.uint8)[1:]
-    out = gray_img.copy()
-    v_min = -1.
-    for num in range(len(bins)):
-        v_max = bins[num]
-        in_range = (v_min < gray_img) & (gray_img <= v_max)
-        out[in_range] = convert_bins[num]
-        v_min = v_max
-    return out
-
-
-    # extract edge
-    # define kernel
-    if k_h_size % 2 != 0:
-        print("hight_size is not else. so you should put else hight_size")
-        sys.exit()
-    else:
-        kernel = np.ones((k_h_size, w))
-        kernel[int(k_h_size/2):] = -1
-
-    # 空間フィルター適用 (h,w) -> h
-    img_edge = np.zeros(img_extract_crop.shape[0])
-    for i in range(0, (h2-h1) - k_h_size):
-        value = np.sum(img_extract_crop[i:k_h_size + i] * kernel)
-        img_edge[i] = value
-
-    # max edge index is under border line
-    h_max_crop = np.argmax(img_edge)
-    h_max = h_max_crop + serching_range[0]
-    return h_max
-
-def calc_pseurate(border_draw_img, pseudo_mask, crop_rate: int, color):
-    h, w, _ = pseudo_mask.shape
-    pseudo_mask4crop = pseudo_mask.copy()
-    mid_p  = list(map(lambda n: int(n/2), (w,h)))
-    sph = mid_p[1] - int(h/crop_rate/2)
-    eph = mid_p[1] + int(h/crop_rate/2)
-    crop_img = pseudo_mask4crop[sph:eph]
-    rate = np.sum(crop_img==0)/(len(crop_img.reshape(-1)))
-    border_draw_img = cv2.rectangle(border_draw_img, (0, sph), (w, eph), color=color, thickness=3)
-    pseudo_mask = cv2.rectangle(pseudo_mask, (0, sph), (w, eph), color=color, thickness=3)
-    return rate, border_draw_img, pseudo_mask
 
 @click.command()
-@click.argument('input_path')
-def main(input_path):
-    # pathlib and var = input_path.parents
-    p_file = Path(input_path)
-    dir_name = p_file.parent.name
-    output_dir = str(OUTPUT_DIR) + "/" + dir_name
-    print(output_dir)
+@click.argument("input_path", type=click.Path(exists=True))
+@click.option(
+    "--conf-path",
+    "conf_path",
+    default=SCRIPT_DIR / "conf/conf_bottom.toml",
+    type=click.Path(exists=True),
+    help="設定ファイルのパス (TOML形式)",
+)
+@click.option(
+    "--output-dir",
+    "output_dir",
+    default=SCRIPT_DIR / "output",
+    type=click.Path(),
+    help="出力画像を保存するディレクトリのパス",
+)
+@click.option(
+    "--output-csv-name",
+    "output_csv_name",
+    default="pseudo_leaf_density_rate_bottom.csv",
+    type=click.Path(),
+    help="出力csvの名前",
+)
+def main(input_path, conf_path, output_dir, output_csv_name):
+    # 設定を読み込む
+    config: LDIConfig = LDIConfig.from_toml(conf_path)
 
-    # Input (original image)
+    # 出力ディレクトリを作成
+    output_dir_pathlib = create_output_dir(output_dir)
+
+    # 画像を読み込む
+    input_pathlib = Path(input_path)
     leaf_image_bgr = read_image(input_path)
     leaf_image_rgb = cv2.cvtColor(leaf_image_bgr, cv2.COLOR_BGR2RGB)
     leaf_image_lsh = calculate_perception(rgb2lch(leaf_image_rgb))
-    light_mask = extract_bright_area(leaf_image_lsh)
-    pseudo_mask = (extract_bright_area(leaf_image_lsh) & np.bitwise_not(extract_green_area(leaf_image_bgr)))
-    pseudo_mask_rgb = np.zeros(leaf_image_bgr.shape, dtype=np.uint8)
-    pseudo_mask_rgb[:,:,0] = pseudo_mask
-    pseudo_mask_rgb[:,:,1] = pseudo_mask
-    pseudo_mask_rgb[:,:,2] = pseudo_mask
 
+    # 疑似葉密度マスクを作成する
+    bright_area_mask = extract_bright_area(leaf_image_lsh, config.lsh_lower, config.lsh_upper)
+    green_area_mask = extract_green_area(leaf_image_bgr, config.hsv_lower, config.hsv_upper)
+    leaf_area_mask = 255 - (bright_area_mask & np.bitwise_not(green_area_mask))
+    leaf_area_mask_3ch = cv2.cvtColor(leaf_area_mask, cv2.COLOR_GRAY2BGR)
+
+    # 画像を分割して擬似葉密度を計算する
     border_draw_img = leaf_image_bgr.copy()
     rate_list = []
+    for i in range(len(config.horizontal_crop_ratio_list)):
+        density_rate, border_draw_img, leaf_area_mask_3ch = calculate_pseudo_leaf_density_rate(
+            border_draw_img, leaf_area_mask_3ch, config.horizontal_crop_ratio_list[i], config.border_color[i]
+        )
+        rate_list.append(density_rate)
 
-    for i in range(len(CROP_RATE)):
-        rate, border_draw_img, pseudo_mask_rgb = calc_pseurate(border_draw_img, pseudo_mask_rgb, CROP_RATE[i], BORDER_COLOR[i])
-        rate_list.append(rate)
-    print(f"{p_file.name}")
+        # RoI: Region of Interest
+        print(
+            f"RoI height / Image height: {config.horizontal_crop_ratio_list[i]}, pseudo leaf density rate: {density_rate}"
+        )
 
-    with open(f'pseu_rate_bottom.csv', 'a', encoding='UTF-8') as f:
-        f.write(f'{output_dir},{p_file.name},{rate_list[0]},{rate_list[1]},{rate_list[2]},{rate_list[3]}\n')
+    # 結果をcsvに書き込む
+    output_csv_path = str(output_dir_pathlib / output_csv_name)
+    with open(output_csv_path, "a", encoding="UTF-8") as f:
+        f.write(f"{output_dir},{input_pathlib.name},{rate_list[0]},{rate_list[1]},{rate_list[2]},{rate_list[3]}\n")
+    print(f"Result CSV was saved at {output_csv_path}")
 
-    img_h = cv2.hconcat([border_draw_img, pseudo_mask_rgb])
+    # 結果画像を出力する
+    img_h = cv2.hconcat([border_draw_img, leaf_area_mask_3ch])
+    output_image_path = str(output_dir_pathlib / f"{input_pathlib.stem}_with_border.jpg")
+    cv2.imwrite(output_image_path, img_h, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+    print(f"Result image was saved at {output_image_path}")
 
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-
-    cv2.imwrite(f"{output_dir}/{p_file.name}_rate_img.jpg", img_h)
 
 if __name__ == "__main__":
     main()
