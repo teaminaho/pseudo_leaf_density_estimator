@@ -3,6 +3,5 @@ pyproject.toml
 __pycache__/
 output/
 *.swp
-*.jpg
 *.png
 *.mp4
