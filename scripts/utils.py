@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from pathlib import Path
+from matplotlib import pyplot as plt
 
 
 def create_output_dir(output_dir):
@@ -47,3 +48,44 @@ def alpha_blend(img1, img2, hmin=0, hmax=None, alpha=0.4):
     img2_expand[hmin:hmax] = img2
     overlay_img = (alpha * img1 + (1 - alpha) * img2_expand).astype(np.uint8)
     return overlay_img
+
+
+def load_image_pathes(image_dir_path: str):
+    image_dir_pathlib = Path(image_dir_path)
+    return np.sort([str(path) for path in image_dir_pathlib.glob("*") if path.suffix in [".jpg", ".png"]])
+
+
+def convert_bgr2rgb(image_bgr):
+    return cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+
+
+def show_image_from_ndarray(image_array, figsize=None, bgr2rgb=True):
+    if figsize is not None:
+        plt.figure(figsize=figsize)
+
+    if (len(image_array.shape) < 3) or (image_array.shape[-1] == 1):
+        plt.imshow(image_array)
+        plt.axis("off")
+    else:
+        if bgr2rgb:
+            plt.imshow(convert_bgr2rgb(image_array))
+        else:
+            plt.imshow(image_array)
+        plt.axis("off")
+
+
+def draw_multiple_image(titles, images, bgr2rgb=True, figsize=None):
+    n_images = len(images)
+    assert len(titles) == n_images
+
+    if figsize is None:
+        _, axes = plt.subplots(1, n_images)
+    else:
+        _, axes = plt.subplots(1, n_images, figsize=figsize)
+    for i in range(n_images):
+        if bgr2rgb:
+            axes[i].imshow(convert_bgr2rgb(images[i]))
+        else:
+            axes[i].imshow(images[i])
+        axes[i].set_title(titles[i])
+        axes[i].axis("off")

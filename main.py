@@ -8,7 +8,7 @@ from scripts.leaf_density_index import (
     rgb2lch,
     extract_bright_area,
     extract_green_area,
-    calculate_perception,
+    enhance_perception,
     get_gridview,
     normalize,
     discretize,
@@ -52,7 +52,7 @@ def main(input_path, conf_path, output_dir, hmin, hmax):
     # Input (original image)
     leaf_image_bgr = read_image(input_path)
     leaf_image_rgb = cv2.cvtColor(leaf_image_bgr, cv2.COLOR_BGR2RGB)
-    leaf_image_lsh = calculate_perception(rgb2lch(leaf_image_rgb))
+    leaf_image_lsh = enhance_perception(rgb2lch(leaf_image_rgb))
     bright_area_mask = extract_bright_area(leaf_image_lsh, config.lsh_lower, config.lsh_upper)
 
     # decide_hmin

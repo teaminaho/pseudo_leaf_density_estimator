@@ -26,7 +26,7 @@ def extract_green_area(img_bgr, hsv_lower=[35, 40, 50], hsv_upper=[80, 255, 255]
     return cv2.inRange(hsv, np.array(hsv_lower), np.array(hsv_upper))
 
 
-def calculate_perception(img_lch):
+def enhance_perception(img_lch):
     """
     Enhances the perceptual contrast of an image in LCH color space by applying a logarithmic transformation to the Chroma component.
 
