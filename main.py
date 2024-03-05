@@ -3,7 +3,7 @@ import cv2
 import click
 import numpy as np
 from pathlib import Path
-from scripts.utils import create_output_dir, read_image, imwrite, to_grayscale_with_roi, alpha_blend
+from scripts.utils import create_output_dir, read_image, imwrite, as_3ch_grayscale_with_roi, alpha_blend
 from scripts.leaf_density_index import (
     rgb2lch,
     extract_bright_area,
@@ -53,7 +53,7 @@ def main(input_path, conf_path, output_dir, hmin, hmax):
     leaf_image_bgr = read_image(input_path)
     leaf_image_rgb = cv2.cvtColor(leaf_image_bgr, cv2.COLOR_BGR2RGB)
     leaf_image_lsh = calculate_perception(rgb2lch(leaf_image_rgb))
-    light_mask = extract_bright_area(leaf_image_lsh, config.lsh_lower, config.lsh_upper)
+    bright_area_mask = extract_bright_area(leaf_image_lsh, config.lsh_lower, config.lsh_upper)
 
     # decide_hmin
     if hmin is None:
@@ -61,17 +61,16 @@ def main(input_path, conf_path, output_dir, hmin, hmax):
 
     # decide_hmax
     if hmax is None:
-        hmax = decide_edge(light_mask, config.k_h_size, config.serch_area)
+        hmax = decide_edge(bright_area_mask, config.k_h_size, config.serch_area)
     print(f"hmin:{hmin},hmax:{hmax}")
 
     # Binarization
-    bright_area_mask = extract_bright_area(leaf_image_lsh, config.lsh_lower, config.lsh_upper)
     green_area_mask = extract_green_area(leaf_image_bgr, config.hsv_lower, config.hsv_upper)
     leaf_area_mask = 255 - (bright_area_mask & np.bitwise_not(green_area_mask))
     leaf_area_mask_crop = leaf_area_mask[hmin:hmax]
 
     # Generate pseudo_leaf_are_mask_bgr Visualization (mask)
-    leaf_area_mask_3ch = to_grayscale_with_roi(leaf_area_mask, leaf_image_bgr.shape, hmin, hmax)
+    leaf_area_mask_3ch = as_3ch_grayscale_with_roi(leaf_area_mask, leaf_image_bgr.shape, hmin, hmax)
 
     # Visualization (heatmap)
     density_img = normalize(

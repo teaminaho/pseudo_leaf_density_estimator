@@ -31,7 +31,7 @@ def draw_roi(img, hmin, hmax):
     return cv2.rectangle(img, pt1, pt2, (0, 255, 0), thickness=3)
 
 
-def to_grayscale_with_roi(gray_image, shape, hmin, hmax):
+def as_3ch_grayscale_with_roi(gray_image, shape, hmin, hmax):
     """Converts a grayscale image to BGR with a rectangle (Region of Interest)."""
     image = np.zeros(shape, dtype=np.uint8)
     image[:, :, 0] = gray_image
