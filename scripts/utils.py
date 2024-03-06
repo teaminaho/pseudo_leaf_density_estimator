@@ -82,7 +82,11 @@ def show_image_from_ndarray(image_array: np.ndarray, figsize: Optional[tuple] = 
 
 
 def draw_multiple_image(
-    titles: List[str], images: List[np.ndarray], bgr2rgb: bool = True, figsize: Optional[tuple] = None
+    titles: List[str],
+    images: List[np.ndarray],
+    bgr2rgb: bool = True,
+    figsize: Optional[tuple] = None,
+    title_size: int = 10,
 ) -> None:
     n_images = len(images)
     assert len(titles) == n_images
@@ -97,4 +101,5 @@ def draw_multiple_image(
         else:
             axes[i].imshow(images[i])
         axes[i].set_title(titles[i])
+        axes[i].title.set_size(title_size)
         axes[i].axis("off")
