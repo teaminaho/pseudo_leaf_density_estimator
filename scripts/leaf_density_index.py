@@ -16,7 +16,7 @@ def extract_bright_area(
     img_lch: np.ndarray, lch_lower: List[float] = [20.0, 0.0, 0.0], lch_upper: List[float] = [100.0, 120.0, 7.0]
 ) -> np.ndarray:
     """Extracts bright areas based on LCH color space thresholds."""
-    return cv2.inRange(img_lch, np.array(lch_lower), np.array(lch_upper))
+    return cv2.inRange(enhance_perception(img_lch), np.array(lch_lower), np.array(lch_upper))
 
 
 def extract_green_area(
