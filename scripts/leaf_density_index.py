@@ -1,29 +1,33 @@
 import sys
 import cv2
 import numpy as np
-from typing import List
+from typing import List, Tuple, Union
 from skimage.color import rgb2lab, lab2lch
 from skimage.measure import block_reduce
 
 
-def rgb2lch(rgbimg):
+def rgb2lch(rgbimg: np.ndarray) -> np.ndarray:
     """Converts an RGB image to LCH color space."""
     img_lab = rgb2lab(rgbimg)
     return lab2lch(img_lab)
 
 
-def extract_bright_area(img_lch, lch_lower=[20.0, 0.0, 0.0], lch_upper=[100.0, 120.0, 7.0]):
+def extract_bright_area(
+    img_lch: np.ndarray, lch_lower: List[float] = [20.0, 0.0, 0.0], lch_upper: List[float] = [100.0, 120.0, 7.0]
+) -> np.ndarray:
     """Extracts bright areas based on LCH color space thresholds."""
     return cv2.inRange(img_lch, np.array(lch_lower), np.array(lch_upper))
 
 
-def extract_green_area(img_bgr, hsv_lower=[35, 40, 50], hsv_upper=[80, 255, 255]):
+def extract_green_area(
+    img_bgr: np.ndarray, hsv_lower: List[int] = [35, 40, 50], hsv_upper: List[int] = [80, 255, 255]
+) -> np.ndarray:
     """Extracts green areas based on HSV color space thresholds."""
     hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
     return cv2.inRange(hsv, np.array(hsv_lower), np.array(hsv_upper))
 
 
-def enhance_perception(img_lch):
+def enhance_perception(img_lch: np.ndarray) -> np.ndarray:
     """
     Enhances the perceptual contrast of an image in LCH color space by applying a logarithmic transformation to the Chroma component.
     """
@@ -35,7 +39,7 @@ def enhance_perception(img_lch):
     return img_new
 
 
-def get_gridview(pseudo_mask, num_divided_width=4):
+def get_gridview(pseudo_mask: np.ndarray, num_divided_width: int = 4) -> np.ndarray:
     """Generates a grid view representation of the pseudo mask.
 
     This function divides the image into uniform blocks, calculates the mean
@@ -69,13 +73,15 @@ def get_gridview(pseudo_mask, num_divided_width=4):
     return (255 - green_average_expand) / 255
 
 
-def normalize(gray_img, v_min):
+def normalize(gray_img: np.ndarray, v_min: Union[int, float]) -> np.ndarray:
     """Normalizes a grayscale image based on a minimum value."""
     float_img = gray_img.astype(float)
     return (np.clip(float_img - v_min, 0.0, None) / (255.0 - v_min) * 255.0).astype(np.uint8)
 
 
-def discretize(gray_img, num_density_bins: int = 4, div_area: List[int] = [0, 30, 170, 240, 255]):
+def discretize(
+    gray_img: np.ndarray, num_density_bins: int = 4, div_area: List[int] = [0, 30, 170, 240, 255]
+) -> np.ndarray:
     """Discretizes a grayscale image into specified number of density bins."""
     bins = np.array(div_area).astype(np.uint8)[1:]
     convert_bins = np.linspace(0, 255, num_density_bins + 1).astype(np.uint8)[1:]
@@ -89,14 +95,20 @@ def discretize(gray_img, num_density_bins: int = 4, div_area: List[int] = [0, 30
     return out
 
 
-def convert_color(output_img, condition_img, low_condition, high_condition, value):
+def convert_color(
+    output_img: np.ndarray,
+    condition_img: np.ndarray,
+    low_condition: Union[int, float],
+    high_condition: Union[int, float],
+    value: int,
+) -> np.ndarray:
     """Converts color of the output image based on the condition."""
     img_out = output_img.copy()
     img_out[(low_condition < condition_img) & (condition_img <= high_condition)] = value
     return img_out
 
 
-def decide_edge(mask_img, k_h_size, serching_range):
+def decide_edge(mask_img: np.ndarray, k_h_size: int, serching_range: Tuple[int, int]) -> int:
     """Decides the edge based on mask image and kernel size."""
     _, w = mask_img.shape
     h1, h2 = serching_range

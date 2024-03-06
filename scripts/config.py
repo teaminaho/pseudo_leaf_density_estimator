@@ -1,6 +1,6 @@
 import toml
 from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 
 @dataclass
