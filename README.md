@@ -3,7 +3,7 @@
 ## 概要
 
 ![出力画像例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/sample_output.jpg)
-<p align="center" style="font-size: 9px;">出力画像例: 左から入力画像、繁茂度ヒートマップ画像、4段階離散化繁茂度マップ画像、<br>　　　　　　　　　　　 グリッド化繁茂度マップ画像、農業試験場指導員の方に行って頂いたアノテーション結果</p>
+<p align="center" style="font-size: 9px;"><b>出力画像例</b>: 左から入力画像、繁茂度ヒートマップ画像、4段階離散化繁茂度マップ画像、<br>　　グリッド化繁茂度マップ画像、農業試験場指導員の方に行って頂いたアノテーション結果</p>
 
 - 本リポジトリでは、アスパラガスの茎葉・擬葉（Pseudo Leaf）の繁茂度マップを簡易に生成・確認するためのコード等を提供します。
 
