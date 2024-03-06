@@ -2,11 +2,8 @@ import sys
 import cv2
 import numpy as np
 from typing import List
-from pathlib import Path
 from skimage.color import rgb2lab, lab2lch
 from skimage.measure import block_reduce
-
-SCRIPT_DIR = Path(__file__).parent.resolve()
 
 
 def rgb2lch(rgbimg):
@@ -29,10 +26,6 @@ def extract_green_area(img_bgr, hsv_lower=[35, 40, 50], hsv_upper=[80, 255, 255]
 def enhance_perception(img_lch):
     """
     Enhances the perceptual contrast of an image in LCH color space by applying a logarithmic transformation to the Chroma component.
-
-    This method aims to mimic the logarithmic response of human vision to color and light,
-    thereby improving the visual contrast and vividness of colors in the image.
-    Low chroma values are made more distinct, while high chroma values are adjusted more subtly, enhancing overall image detail and color differentiation.
     """
     img_new = img_lch.copy()
 
