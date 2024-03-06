@@ -15,9 +15,9 @@ def rgb2lch(rgbimg):
     return lab2lch(img_lab)
 
 
-def extract_bright_area(img_lsh, lsh_lower=[20.0, 0.0, 0.0], lsh_upper=[100.0, 120.0, 7.0]):
-    """Extracts bright areas based on LSH color space thresholds."""
-    return cv2.inRange(img_lsh, np.array(lsh_lower), np.array(lsh_upper))
+def extract_bright_area(img_lch, lch_lower=[20.0, 0.0, 0.0], lch_upper=[100.0, 120.0, 7.0]):
+    """Extracts bright areas based on LCH color space thresholds."""
+    return cv2.inRange(img_lch, np.array(lch_lower), np.array(lch_upper))
 
 
 def extract_green_area(img_bgr, hsv_lower=[35, 40, 50], hsv_upper=[80, 255, 255]):
