@@ -41,6 +41,8 @@
 - 繁茂度のヒートマップ画像を 4 段階に離散化した画像
 - 離散化された繁茂度のヒートマップ画像について、画像グリッド領域毎に統計処理を行った画像
 
+また、各処理の具体的な実装と処理例は[leaf_density_calculation.ipynb](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/leaf_density_calculation.ipynb)から確認可能です。
+
 ## 動作確認環境
 - OS: Ubuntu 22.04
 - Python: 3.7.7
