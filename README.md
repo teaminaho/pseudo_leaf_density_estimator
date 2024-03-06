@@ -2,7 +2,7 @@
 
 ## 概要
 
-![出力画像例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/sample_output.jpg)
+![出力画像例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/release/docs/sample_output.jpg)
 <p align="center" style="font-size: 9px;"><b>出力画像例</b>: 左から入力画像、繁茂度ヒートマップ画像、4段階離散化繁茂度マップ画像、<br>　　グリッド化繁茂度マップ画像、農業試験場指導員の方に行って頂いたアノテーション例</p>
 
 - 本リポジトリでは、アスパラガスの茎葉・擬葉（Pseudo Leaf）の繁茂度マップを簡易に生成・確認するためのコード等を提供します。
@@ -16,7 +16,7 @@
 
 ## 開発目的
 
-![利用例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/usage.png)
+![利用例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/release/docs/usage.png)
 
 - そこで上記の問題に対して、スマートフォン等の画像から簡易に繁茂度を自動的に数値化・可視化するためのツールを開発しました。
 - このツールは、茎葉の繁茂度を自動的に数値化・可視化し、アスパラガス栽培の専門家である農業試験場の指導員が提供するアノテーション画像と同等の情報を持つ繁茂度マップを画像から推定するためのコア技術の開発を目的として作成しました。
@@ -24,7 +24,7 @@
 
 ## 各処理工程解説
 
-![処理工程説明画像](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/about.jpg)
+![処理工程説明画像](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/release/docs/about.jpg)
 
 | 処理名                            | 説明                                                           |
 | --------------------------------- | -------------------------------------------------------------- |
@@ -40,7 +40,7 @@
 - 繁茂度のヒートマップ画像を 4 段階に離散化した画像
 - 離散化された繁茂度のヒートマップ画像について、画像グリッド領域毎に統計処理を行った画像
 
-また、各処理の具体的な実装と処理例は[leaf_density_calculation.ipynb](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/leaf_density_calculation.ipynb)から確認可能です。
+また、各処理の具体的な実装と処理例は[leaf_density_calculation.ipynb](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/release/leaf_density_calculation.ipynb)から確認可能です。
 
 ## 動作確認環境
 - OS: Ubuntu 22.04
