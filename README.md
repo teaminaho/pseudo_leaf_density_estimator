@@ -1,8 +1,8 @@
 # アスパラガス茎葉繁茂度診断ツール
 
 ## 概要
-
-- 本リポジトリでは、アスパラガスの茎葉・擬葉（Pseudo Leaf）の繁茂度をスマートフォンの撮影カメラ画像から簡易取得するためのコード等を提供します。
+![出力画像例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/sample_output.jpg)
+- 本リポジトリでは、アスパラガスの茎葉・擬葉（Pseudo Leaf）の繁茂度を画像から簡易取得するためのコード等を提供します。
 
 ## 背景
 
@@ -10,14 +10,15 @@
   一方で、茎葉の繁茂度は繁茂状態は産地や農家により様々であり、また複合的な観点での判断が必要なため、形式知化や指導が難しく、新規生産者が
   その判断の部分でつまづき得るポイントになっています。
 - たとえば、その要因の一つは繁茂度を表現する指標・共通言語が無いことであり、現状は「スカスカ」など曖昧な表現で、主に口語で共有しています。
-  - 指導員の方にヒアリングした際の情報の一つとして、繁茂度は概ね４段階程度に大別され、その情報を基に茎葉管理を行っている、という情報があります。
+  - 指導員の方にヒアリングした際の情報の一つとして、繁茂度は概ね４段階程度に大別され、その情報を基に茎葉管理を行っている、という前提情報があります。
 
 ## 開発目的
-
+![利用例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/usage.png)
 - そこで上記の問題に対して、スマートフォン等の画像から簡易に繁茂度を自動的に数値化・可視化するためのツールを開発しました。
-- このツールは、茎葉の繁茂度を自動的に数値化・可視化し、アスパラガス栽培の専門家である農業試験場の指導員が提供するアノテーション画像と同等の情報を持つ繁茂度マップを画像から推定する事をゴールとして作成しました。
+- このツールは、茎葉の繁茂度を自動的に数値化・可視化し、アスパラガス栽培の専門家である農業試験場の指導員が提供するアノテーション画像と同等の情報を持つ繁茂度マップを画像から推定するためのコア技術の開発をゴールとして作成しました。
 
 ## 各処理工程解説
+![処理工程説明画像](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/about.jpg)
 
 | 処理名                         | 説明                                                           |
 | ------------------------------ | -------------------------------------------------------------- |
@@ -53,7 +54,14 @@ pip install -r requirements.txt
 python generate_leaf_density_map_images.py INPUT_PATH [オプション]
 ```
 
-`INPUT_PATH`には、処理対象の画像ファイルへのパスを指定してください。
+- `INPUT_PATH`でパス指定された処理対象の画像ファイルを入力として、繁茂度マップ推定を行い、結果画像を出力します
+- 出力画像は左から
+  - 入力画像
+  - 茎葉候補領域マスク
+  - 繁茂度ヒートマップ画像
+  - 4段階離散化された繁茂度ヒートマップ画像
+  - 4段階離散化+グリッド後処理を行った繁茂度ヒートマップ画像
+
 
 ### オプション
 
@@ -74,6 +82,7 @@ data/ikeuchi_anno_data/sample_images/20211005_132152.jpg \
 --hmax 2500
 ```
 
+- 
 ![結果画像の例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/refactor/output/20211005_132152_output.jpg)
 
 ### `generate_leaf_density_map_images.py` 用設定パラメタについて
