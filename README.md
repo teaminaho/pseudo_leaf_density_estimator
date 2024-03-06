@@ -83,7 +83,7 @@ python generate_leaf_density_map_images.py INPUT_PATH [オプション]
 
 ```
 python generate_leaf_density_map_images.py \
-data/ikeuchi_anno_data/sample_images/20211005_132152.jpg \
+data/2021/sample_images/20211005_132152.jpg \
 --hmin 0 \
 --hmax 2500
 ```
