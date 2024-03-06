@@ -2,9 +2,10 @@
 
 ## 概要
 
-![出力画像例（左から元画像、繁茂度ヒートマップ画像、4段階離散化繁茂度マップ画像、グリッド化繁茂度マップ画像、農業試験場指導員方のアノテーション画像）](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/sample_output.jpg)
+![出力画像例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/sample_output.jpg)
+（左から入力画像、繁茂度ヒートマップ画像、4段階離散化繁茂度マップ画像、グリッド化繁茂度マップ画像、農業試験場指導員の方に行って頂いたアノテーションの画像）
 
-- 本リポジトリでは、アスパラガスの茎葉・擬葉（Pseudo Leaf）の繁茂度を画像から簡易取得するためのコード等を提供します。
+- 本リポジトリでは、アスパラガスの茎葉・擬葉（Pseudo Leaf）の繁茂度マップを簡易に生成・確認するためのコード等を提供します。
 
 ## 背景
 
@@ -19,7 +20,7 @@
 ![利用例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/enhancement/preparation_for_code_release/docs/usage.png)
 
 - そこで上記の問題に対して、スマートフォン等の画像から簡易に繁茂度を自動的に数値化・可視化するためのツールを開発しました。
-- このツールは、茎葉の繁茂度を自動的に数値化・可視化し、アスパラガス栽培の専門家である農業試験場の指導員が提供するアノテーション画像と同等の情報を持つ繁茂度マップを画像から推定するためのコア技術の開発をゴールとして作成しました。
+- このツールは、茎葉の繁茂度を自動的に数値化・可視化し、アスパラガス栽培の専門家である農業試験場の指導員が提供するアノテーション画像と同等の情報を持つ繁茂度マップを画像から推定するためのコア技術の開発を目的として作成しました。
 
 
 ## 各処理工程解説
@@ -41,13 +42,11 @@
 - 離散化された繁茂度のヒートマップ画像について、画像グリッド領域毎に統計処理を行った画像
 
 ## 動作確認環境
-
+- OS: Ubuntu 22.04
 - Python: 3.7.7
 
 ## 依存ライブラリのインストール
-
 - 以下のコマンドを実行して下さい。
-
 ```
 pip install -r requirements.txt
 ```
@@ -61,7 +60,7 @@ python generate_leaf_density_map_images.py INPUT_PATH [オプション]
 ```
 
 - `INPUT_PATH`でパス指定された処理対象の画像ファイルを入力として、繁茂度マップ推定を行い、結果画像を出力します
-- 出力画像は左から
+- 出力画像は以下の5つの画像を横方向結合した画像で構成されます
   - 入力画像
   - 茎葉候補領域マスク
   - 繁茂度ヒートマップ画像
