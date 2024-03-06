@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# @(#) This script is main.py run for any datas.;if you want to run any data, you put atribute as directory of data you want to process.
+# @(#) This script is generate_leaf_density_map_images.py run for any datas.;if you want to run any data, you put atribute as directory of data you want to process.
 
 input_dir=${1}
 output_dir=$(dirname $0)/data/output
@@ -19,7 +19,7 @@ if [ -e $roi_csv ]; then
 				mkdir $output_dir/$dir_name
 			fi
 		else
-			./main.py "${input_dir}/$dir_name/${file_name}" --hmin ${highest} --hmax ${lowest}
+			./generate_leaf_density_map_images.py "${input_dir}/$dir_name/${file_name}" --hmin ${highest} --hmax ${lowest}
 			mv "${output_dir}/${file_name%%.jpg}_output.png" "${output_dir}/$dir_name"
 		fi
 	done
@@ -27,7 +27,7 @@ if [ -e $roi_csv ]; then
 else
 	for img_path in ${input_dir}/*.jpg; do
 		img_name=${img_path#${input_dir}/}
-		./main.py $img_path --hmin 0 --hmax 3264
+		./generate_leaf_density_map_images.py $img_path --hmin 0 --hmax 3264
 		output_path=$output_dir/${img_path#data/}
 		echo output_path:$output_path
 		mv "${output_dir}/${img_name%%.jpg}_output.png" "${output_dir}/$img_name"
