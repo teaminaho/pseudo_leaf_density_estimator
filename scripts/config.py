@@ -1,12 +1,12 @@
 import toml
 from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 
 @dataclass
 class LDIConfig:
-    lsh_lower: List[float]
-    lsh_upper: List[float]
+    lch_lower: List[float]
+    lch_upper: List[float]
     hsv_lower: List[int]
     hsv_upper: List[int]
     grid_size: Optional[int] = None
