@@ -46,8 +46,15 @@
 - OS: Ubuntu 22.04
 - Python: 3.7.7
 
-## 依存ライブラリのインストール
-- 以下のコマンドを実行して下さい。
+## インストール
+
+### リポジトリのクローン
+```
+git clone git@github.com:teaminaho/pseudo_leaf_density_estimator.git
+```
+
+### 依存ライブラリのインストール
+- クローン先のディレクトリで以下のコマンドを実行して下さい。
 ```
 pip install -r requirements.txt
 ```
@@ -81,10 +88,7 @@ python generate_leaf_density_map_images.py INPUT_PATH [オプション]
 以下のコマンド例では、サンプル画像に対して、切り取り開始の画像縦座標値を`0`、切り取り終了の画像縦座標値を`2500`と指定した形で結果画像を生成します。
 
 ```
-python generate_leaf_density_map_images.py \
-data/2021/sample_images/20211005_132152.jpg \
---hmin 0 \
---hmax 2500
+python generate_leaf_density_map_images.py data/2021/sample_images/20211005_132152.jpg --hmin 0 --hmax 2500
 ```
 
 ![結果画像の例](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/refactor/output/20211005_132152_output.jpg)
