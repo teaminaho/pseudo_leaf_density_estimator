@@ -43,8 +43,8 @@
 また、各処理の具体的な実装と処理例は[leaf_density_calculation.ipynb](https://github.com/teaminaho/pseudo_leaf_density_estimator/blob/release/leaf_density_calculation.ipynb)から確認可能です。
 
 ## 動作確認環境
-- OS: Ubuntu 22.04
-- Python: 3.7.7
+- OS: Ubuntu 22.04 (Poetry + Pyenv), Windows11 (+ Anaconda)
+- Python: 3.7.7, 3.7.13
 
 ## インストール
 
