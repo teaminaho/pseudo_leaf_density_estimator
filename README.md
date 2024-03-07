@@ -46,6 +46,10 @@
 - OS: Ubuntu 22.04 (Poetry + Pyenv), Windows11 (+ Anaconda)
 - Python: 3.7.7, 3.7.13
 
+- Windows + Python仮想環境(Anaconda)での動作確認は以下のnotionページのような手順で行いました。ご参考にして頂ければと思います。
+https://www.notion.so/Windows-86144a5e44e34819bd0bfd4cbc90353f?pvs=4
+
+
 ## インストール
 
 ### リポジトリのクローン
